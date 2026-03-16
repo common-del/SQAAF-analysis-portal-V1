@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UP-SQAAF Pilot Analysis Portal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0F2044;--navy-mid:#1a3a6b;--saffron:#E86A2B;--gold:#F5A623;
+  --green:#2A7A4B;--green-light:#E8F5EE;--amber:#D97706;--amber-light:#FEF3C7;
+  --red:#B91C1C;--red-light:#FEE2E2;--white:#FFFFFF;--gray-50:#F8F9FB;
+  --gray-100:#EFF1F5;--gray-200:#DDE1EA;--gray-400:#8B95A9;--gray-600:#4A5568;
+  --gray-800:#1A202C;--utkarsh:#2A7A4B;--utkarsh-bg:#E8F5EE;
+  --unnat:#B45309;--unnat-bg:#FEF3C7;--uday:#B91C1C;--uday-bg:#FEE2E2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--gray-50);color:var(--gray-800);min-height:100vh;}
+.header{background:var(--navy);color:white;border-bottom:3px solid var(--saffron);}
+.header-inner{max-width:1400px;margin:0 auto;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;}
+.header-badge{background:var(--saffron);color:white;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:4px 10px;border-radius:3px;text-transform:uppercase;margin-bottom:4px;display:inline-block;}
+.header h1{font-size:20px;font-weight:700;}
+.header-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;}
+.header-right{display:flex;gap:24px;align-items:center;}
+.header-stat .val{font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--gold);}
+.header-stat .lbl{font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:0.8px;text-transform:uppercase;}
+.header-divider{width:1px;height:36px;background:rgba(255,255,255,0.15);}
+.nav-wrap{background:var(--navy-mid);border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;z-index:100;}
+.nav-tabs{max-width:1400px;margin:0 auto;padding:0 32px;display:flex;}
+.nav-tab{padding:13px 22px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.55);cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.nav-tab:hover{color:rgba(255,255,255,0.85);}
+.nav-tab.active{color:white;border-bottom-color:var(--saffron);background:rgba(255,255,255,0.05);}
+.content{max-width:1400px;margin:0 auto;padding:28px 32px;}
+.tab-pane{display:none;}.tab-pane.active{display:block;}
+.section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--saffron);margin-bottom:6px;}
+.section-title{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.section-desc{font-size:13px;color:var(--gray-400);margin-bottom:24px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;}
+.stat-card{background:white;border:1px solid var(--gray-200);border-radius:8px;padding:20px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--navy);}
+.stat-card.saffron::before{background:var(--saffron);}
+.stat-card.green::before{background:var(--green);}
+.stat-card.gold::before{background:var(--gold);}
+.stat-card .s-val{font-size:32px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--navy);line-height:1;margin-bottom:6px;}
+.stat-card .s-label{font-size:12px;color:var(--gray-400);font-weight:500;}
+.stat-card .s-sub{font-size:11px;color:var(--gray-400);margin-top:4px;}
+.grade{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:600;}
+.grade.utkarsh{background:var(--utkarsh-bg);color:var(--utkarsh);}
+.grade.unnat{background:var(--unnat-bg);color:var(--unnat);}
+.grade.uday{background:var(--uday-bg);color:var(--uday);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:24px;}
+.grid-65-35{display:grid;grid-template-columns:65fr 35fr;gap:20px;margin-bottom:24px;}
+.grid-40-60{display:grid;grid-template-columns:40fr 60fr;gap:20px;margin-bottom:24px;}
+.card{background:white;border:1px solid var(--gray-200);border-radius:8px;padding:22px;}
+.card-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title .dot{width:8px;height:8px;border-radius:50%;background:var(--saffron);flex-shrink:0;}
+.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+.data-table th{background:var(--gray-50);border-bottom:2px solid var(--gray-200);padding:10px 12px;text-align:left;font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--gray-600);}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--gray-50);}
+.score-bar-wrap{display:flex;align-items:center;gap:10px;}
+.score-bar{flex:1;height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;min-width:60px;}
+.score-bar-fill{height:100%;border-radius:3px;background:var(--navy);transition:width 0.6s ease;}
+.score-bar-fill.low{background:#EF4444;}
+.score-bar-fill.mid{background:var(--amber);}
+.score-bar-fill.high{background:var(--green);}
+.score-val{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--gray-600);min-width:30px;text-align:right;}
+.rank{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--gray-400);min-width:24px;}
+.domain-tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;}
+.domain-tag.d1{background:#EFF6FF;color:#1D4ED8;}
+.domain-tag.d2{background:#F5F3FF;color:#7C3AED;}
+.domain-tag.d3{background:#F0FDFA;color:#0F766E;}
+.domain-tag.d4{background:#FFFBEB;color:#B45309;}
+.domain-tag.d5{background:#FFF1F2;color:#B91C1C;}
+.chart-wrap{position:relative;height:260px;}
+.chart-wrap.tall{height:340px;}
+.chart-wrap.short{height:200px;}
+.domain-header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:6px;margin-bottom:1px;cursor:pointer;user-select:none;}
+.domain-header.d1{background:#EFF6FF;}
+.domain-header.d2{background:#F5F3FF;}
+.domain-header.d3{background:#F0FDFA;}
+.domain-header.d4{background:#FFFBEB;}
+.domain-header.d5{background:#FFF1F2;}
+.domain-label{font-size:15px;font-weight:700;flex:1;}
+.domain-d1{color:#1D4ED8;}
+.domain-d2{color:#7C3AED;}
+.domain-d3{color:#0F766E;}
+.domain-d4{color:#B45309;}
+.domain-d5{color:#B91C1C;}
+.domain-meta{font-size:12px;color:var(--gray-600);display:flex;gap:16px;}
+.subdomain-table{width:100%;border-collapse:collapse;}
+.subdomain-row{border-bottom:1px solid var(--gray-100);}
+.subdomain-row td{padding:9px 12px;font-size:12.5px;}
+.subdomain-row td:first-child{width:50px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gray-400);font-weight:600;}
+.collapse-content{display:none;}
+.collapse-content.open{display:block;}
+.toggle-icon{font-size:10px;transition:transform 0.2s;}
+.domain-header.open .toggle-icon{transform:rotate(180deg);}
+.pct-bar{height:8px;background:var(--gray-100);border-radius:4px;overflow:hidden;margin-top:8px;}
+.pct-fill{height:100%;border-radius:4px;}
+.note{background:#FFF9F0;border:1px solid #FED7AA;border-left:4px solid var(--saffron);padding:14px 16px;border-radius:6px;font-size:13px;color:#92400E;margin-bottom:20px;line-height:1.6;}
+.table-scroll{overflow-x:auto;}
+.theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+.theme-card{background:white;border:1px solid var(--gray-200);border-radius:8px;padding:16px;border-left:4px solid var(--gray-200);}
+.theme-card.high{border-left-color:#EF4444;}
+.theme-card.medium{border-left-color:var(--amber);}
+.theme-card.low{border-left-color:var(--green);}
+.theme-card.positive{border-left-color:var(--green);}
+.theme-title{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.mention-badge{background:var(--gray-100);color:var(--gray-600);font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.theme-card p{font-size:12px;color:var(--gray-600);line-height:1.6;}
+.gap-card{background:white;border:1px solid var(--gray-200);border-radius:8px;padding:18px;position:relative;overflow:hidden;}
+.gap-num{font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:700;color:var(--gray-100);position:absolute;right:14px;bottom:6px;line-height:1;}
+.gap-title{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px;}
+.gap-row{font-size:12px;color:var(--gray-600);margin-bottom:4px;line-height:1.5;}
+.gap-row strong{color:var(--gray-800);font-weight:600;}
+.gap-good{margin-top:10px;padding-top:10px;border-top:1px dashed var(--gray-200);font-size:12px;color:var(--green);font-weight:500;}
+.framework-domain{margin-bottom:20px;}
+.mb-20{margin-bottom:20px;}
+.mb-28{margin-bottom:28px;}
+.text-mono{font-family:'IBM Plex Mono',monospace;}
+.text-right{text-align:right;}
+@media(max-width:900px){
+  .grid-2,.grid-3,.grid-65-35,.grid-40-60{grid-template-columns:1fr;}
+  .content{padding:20px 16px;}
+  .header-inner{flex-direction:column;align-items:flex-start;gap:12px;}
+  .header-right{flex-wrap:wrap;}
+  .nav-tabs{overflow-x:auto;}
+  .nav-tab{padding:12px 14px;font-size:12px;}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-badge">UP-SQAAF Pilot</div>
+      <h1>School Quality Assessment Portal</h1>
+      <div class="header-sub">Uttar Pradesh &middot; Feb 9&ndash;14, 2025 &middot; Districts: Unnao, Barabanki, Lucknow</div>
+    </div>
+    <div class="header-right">
+      <div class="header-stat"><div class="val">42</div><div class="lbl">Schools Assessed</div></div>
+      <div class="header-divider"></div>
+      <div class="header-stat"><div class="val">3</div><div class="lbl">Districts</div></div>
+      <div class="header-divider"></div>
+      <div class="header-stat"><div class="val">86</div><div class="lbl">Parameters</div></div>
+      <div class="header-divider"></div>
+      <div class="header-stat"><div class="val" style="color:#F5A623">Unnat</div><div class="lbl">Avg Grade</div></div>
+    </div>
+  </div>
+</div>
+<div class="nav-wrap">
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchTab(this,'summary')">&#9685; Summary Views</div>
+    <div class="nav-tab" onclick="switchTab(this,'sqaaf')">&#8942; SQAAF Framework</div>
+    <div class="nav-tab" onclick="switchTab(this,'analysis')">&#9638; Parameter Analysis</div>
+    <div class="nav-tab" onclick="switchTab(this,'evidence')">&#9672; Evidence Analysis</div>
+    <div class="nav-tab" onclick="switchTab(this,'feedback')">&#9678; Feedback Analysis</div>
+  </div>
+</div>
+<div class="content">
+
+<!-- SUMMARY -->
+<div id="tab-summary" class="tab-pane active">
+  <div class="section-label">Pilot Overview</div>
+  <div class="section-title">Summary Views</div>
+  <div class="section-desc">High-level results from the UP-SQAAF pilot across 42 schools in 3 districts.</div>
+  <div class="stat-grid">
+    <div class="stat-card saffron"><div class="s-val">42</div><div class="s-label">Schools Assessed</div><div class="s-sub">out of 45 targeted</div></div>
+    <div class="stat-card"><div class="s-val">3</div><div class="s-label">Districts</div><div class="s-sub">Unnao, Barabanki, Lucknow</div></div>
+    <div class="stat-card green"><div class="s-val" style="font-size:24px">Unnat</div><div class="s-label">Average Grade</div><div class="s-sub">Scale: Uday &rarr; Unnat &rarr; Utkarsh</div></div>
+    <div class="stat-card gold"><div class="s-val">74.1</div><div class="s-label">Avg Weighted Score</div><div class="s-sub">out of 100</div></div>
+    <div class="stat-card"><div class="s-val">86</div><div class="s-label">Parameters Assessed</div><div class="s-sub">across 5 domains</div></div>
+    <div class="stat-card"><div class="s-val">34</div><div class="s-label">Feedback Responses</div><div class="s-sub">from pilot schools</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>District-wise Performance</div>
+      <table class="data-table">
+        <thead><tr><th>District</th><th>Schools</th><th>Avg Score</th><th>Grade Mix</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Lucknow</strong></td><td>12</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:77%"></div></div><span class="score-val">77.1</span></div></td><td><span class="grade unnat">6 Unnat</span> <span class="grade utkarsh">6 Utkarsh</span></td></tr>
+          <tr><td><strong>Barabanki</strong></td><td>15</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:74%"></div></div><span class="score-val">74.0</span></div></td><td><span class="grade unnat">9 Unnat</span> <span class="grade utkarsh">6 Utkarsh</span></td></tr>
+          <tr><td><strong>Unnao</strong></td><td>15</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:71%"></div></div><span class="score-val">71.3</span></div></td><td><span class="grade unnat">12 Unnat</span> <span class="grade utkarsh">3 Utkarsh</span></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:16px;"><div class="chart-wrap short"><canvas id="districtChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Management Type Breakdown</div>
+      <table class="data-table">
+        <thead><tr><th>Type</th><th>N</th><th>Avg Score</th><th>Grade</th></tr></thead>
+        <tbody>
+          <tr><td>Non-Govt Aided H/S</td><td>2</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:92.5%"></div></div><span class="score-val">92.5</span></div></td><td><span class="grade utkarsh">Utkarsh</span></td></tr>
+          <tr><td>Parishadiya Composite</td><td>8</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:77.2%"></div></div><span class="score-val">77.2</span></div></td><td><span class="grade utkarsh">Utkarsh</span></td></tr>
+          <tr><td>GIC (Govt. Secondary)</td><td>4</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:76.7%"></div></div><span class="score-val">76.7</span></div></td><td><span class="grade utkarsh">Utkarsh</span></td></tr>
+          <tr><td>GGIC (Govt. Girls Secondary)</td><td>3</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:74%"></div></div><span class="score-val">74.0</span></div></td><td><span class="grade unnat">Unnat</span></td></tr>
+          <tr><td>Parishadiya Primary</td><td>12</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:72.4%"></div></div><span class="score-val">72.4</span></div></td><td><span class="grade unnat">Unnat</span></td></tr>
+          <tr><td>Parishadiya Upper Primary</td><td>10</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:70.2%"></div></div><span class="score-val">70.2</span></div></td><td><span class="grade unnat">Unnat</span></td></tr>
+          <tr><td>Govt. Aided H/S</td><td>2</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill low" style="width:68%"></div></div><span class="score-val">68.1</span></div></td><td><span class="grade unnat">Unnat</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card mb-20">
+    <div class="card-title"><span class="dot"></span>Domain-wise Performance Summary</div>
+    <div class="note"><strong>Weightage note:</strong> D4 (Assessment & Outcomes) carries 40% weight. D3 carries 20%. D1 and D2 each carry 15%. D5 carries 10%.</div>
+    <div class="grid-65-35">
+      <div>
+        <table class="data-table">
+          <thead><tr><th>Domain</th><th>Params</th><th>Weight</th><th>Avg Score (/3)</th><th>Wtd Score</th></tr></thead>
+          <tbody>
+            <tr><td><span class="domain-tag d1">D1</span> Infrastructure &amp; Safety</td><td>26&ndash;27</td><td>15%</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:68%"></div></div><span class="score-val">2.03</span></div></td><td class="text-mono">11.09</td></tr>
+            <tr><td><span class="domain-tag d2">D2</span> HR &amp; Leadership</td><td>11</td><td>15%</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:72%"></div></div><span class="score-val">2.16</span></div></td><td class="text-mono">14.79</td></tr>
+            <tr><td><span class="domain-tag d3">D3</span> Teaching &amp; Learning</td><td>26&ndash;27</td><td>20%</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:68%"></div></div><span class="score-val">2.04</span></div></td><td class="text-mono">29.57</td></tr>
+            <tr><td><span class="domain-tag d4">D4</span> Assessment &amp; Outcomes</td><td>11&ndash;14</td><td>40%</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill mid" style="width:73%"></div></div><span class="score-val">2.19</span></div></td><td class="text-mono">7.39</td></tr>
+            <tr><td><span class="domain-tag d5">D5</span> Wellbeing &amp; Community</td><td>7&ndash;8</td><td>10%</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:75%"></div></div><span class="score-val">2.26</span></div></td><td class="text-mono">73.94</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div><div class="chart-wrap"><canvas id="domainRadar"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SQAAF FRAMEWORK -->
+<div id="tab-sqaaf" class="tab-pane">
+  <div class="section-label">Framework Structure</div>
+  <div class="section-title">SQAAF Framework &mdash; Uttar Pradesh</div>
+  <div class="section-desc">5 domains &middot; 86 parameters &middot; 3-tier grading (Uday &rarr; Unnat &rarr; Utkarsh)</div>
+  <div class="stat-grid" style="grid-template-columns:repeat(5,1fr)">
+    <div class="stat-card" style="border-top-color:#1D4ED8"><div class="s-val" style="font-size:24px;color:#1D4ED8">D1</div><div class="s-label">Infrastructure &amp; Safety</div><div class="s-sub">26&ndash;27 params &middot; 15%</div><div class="pct-bar"><div class="pct-fill" style="width:15%;background:#1D4ED8"></div></div></div>
+    <div class="stat-card" style="border-top-color:#7C3AED"><div class="s-val" style="font-size:24px;color:#7C3AED">D2</div><div class="s-label">HR &amp; Leadership</div><div class="s-sub">11 params &middot; 15%</div><div class="pct-bar"><div class="pct-fill" style="width:15%;background:#7C3AED"></div></div></div>
+    <div class="stat-card" style="border-top-color:#0F766E"><div class="s-val" style="font-size:24px;color:#0F766E">D3</div><div class="s-label">Teaching &amp; Learning</div><div class="s-sub">26&ndash;27 params &middot; 20%</div><div class="pct-bar"><div class="pct-fill" style="width:20%;background:#0F766E"></div></div></div>
+    <div class="stat-card" style="border-top-color:#B45309"><div class="s-val" style="font-size:24px;color:#B45309">D4</div><div class="s-label">Assessment &amp; Outcomes</div><div class="s-sub">11&ndash;14 params &middot; 40%</div><div class="pct-bar"><div class="pct-fill" style="width:40%;background:#B45309"></div></div></div>
+    <div class="stat-card" style="border-top-color:#B91C1C"><div class="s-val" style="font-size:24px;color:#B91C1C">D5</div><div class="s-label">Wellbeing &amp; Community</div><div class="s-sub">7&ndash;8 params &middot; 10%</div><div class="pct-bar"><div class="pct-fill" style="width:10%;background:#B91C1C"></div></div></div>
+  </div>
+  <div class="card mb-20">
+    <div class="card-title"><span class="dot"></span>Grading Scale</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px;padding:16px;background:var(--uday-bg);border-radius:6px;border:1px solid #FECACA"><div class="grade uday" style="margin-bottom:8px">Uday (उदय)</div><div style="font-size:13px;color:var(--uday)">Score: 1 &mdash; Needs Improvement</div><div style="font-size:12px;color:var(--gray-600);margin-top:4px">School does not meet the basic standard. Significant gaps in compliance and implementation.</div></div>
+      <div style="flex:1;min-width:200px;padding:16px;background:var(--unnat-bg);border-radius:6px;border:1px solid #FDE68A"><div class="grade unnat" style="margin-bottom:8px">Unnat (उन्नत)</div><div style="font-size:13px;color:var(--unnat)">Score: 2 &mdash; Developing</div><div style="font-size:12px;color:var(--gray-600);margin-top:4px">School partially meets the standard. Some systems exist but inconsistencies remain.</div></div>
+      <div style="flex:1;min-width:200px;padding:16px;background:var(--utkarsh-bg);border-radius:6px;border:1px solid #A7F3D0"><div class="grade utkarsh" style="margin-bottom:8px">Utkarsh (उत्कर्ष)</div><div style="font-size:13px;color:var(--utkarsh)">Score: 3 &mdash; Achieving</div><div style="font-size:12px;color:var(--gray-600);margin-top:4px">School consistently meets or exceeds the standard. Strong documentation and systems in place.</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Domain &amp; Sub-Domain Structure <span style="font-size:12px;color:var(--gray-400);font-weight:400;margin-left:4px">— click to expand</span></div>
+    <div class="framework-domain">
+      <div class="domain-header d1" onclick="toggleDomain(this)"><span class="domain-tag d1">D1</span><span class="domain-label domain-d1">Infrastructure &amp; Safety of Students</span><div class="domain-meta"><span>26&ndash;27 params</span><span>15% weight</span><span>Avg: 2.03/3</span></div><span class="toggle-icon">&#9660;</span></div>
+      <div class="collapse-content">
+        <table class="subdomain-table">
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 1: Physical Infrastructure (21 params)</td></tr>
+          <tr class="subdomain-row"><td>1.1.1</td><td>Classroom Availability</td><td><span class="score-val">2.69</span></td><td><span class="grade utkarsh">High</span></td></tr>
+          <tr class="subdomain-row"><td>1.1.2</td><td>Classroom Space &amp; Seating</td><td><span class="score-val">2.17</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.3</td><td>Classroom Ventilation</td><td><span class="score-val">2.40</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.4</td><td>Classroom Lighting</td><td><span class="score-val">2.36</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.5</td><td>Principal's Room / Staff Room</td><td><span class="score-val">1.95</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.6</td><td>Drinking Water Availability</td><td><span class="score-val">1.83</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>1.1.7</td><td>Toilet Functionality &amp; Cleanliness</td><td><span class="score-val">2.14</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.8</td><td>Handwash Facility</td><td><span class="score-val">2.38</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.9</td><td>Indoor/Outdoor Sports Infrastructure</td><td><span class="score-val">1.88</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.10</td><td>Common Area &amp; Gathering Facilities</td><td><span class="score-val">1.38</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>1.1.11</td><td>Library Functionality</td><td><span class="score-val">2.19</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.12</td><td>Laboratory Facilities (UPS/Secondary only)</td><td><span class="score-val">2.07</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.13</td><td>Computer / ICT Lab</td><td><span class="score-val">1.38</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>1.1.14</td><td>Smart Class Equipment</td><td><span class="score-val">2.14</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.15</td><td>Medical Room &amp; First Aid</td><td><span class="score-val">1.98</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.16</td><td>Accessibility for CWSN</td><td><span class="score-val">2.19</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.17</td><td>Child Helpline &amp; Emergency Numbers Display</td><td><span class="score-val">2.43</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.18</td><td>Kitchen / Canteen</td><td><span class="score-val">2.29</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.19</td><td>Kitchen Garden / Green School</td><td><span class="score-val">2.26</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.20</td><td>Waste Management</td><td><span class="score-val">2.17</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.1.21</td><td>Electricity Connection</td><td><span class="score-val">2.86</span></td><td><span class="grade utkarsh">High</span></td></tr>
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 2: Safety &amp; Security (6 params)</td></tr>
+          <tr class="subdomain-row"><td>1.2.1</td><td>CCTV Coverage &amp; Functionality</td><td><span class="score-val">1.40</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>1.2.2</td><td>Entry / Exit Monitoring</td><td><span class="score-val">1.10</span></td><td><span class="grade uday">Lowest</span></td></tr>
+          <tr class="subdomain-row"><td>1.2.3</td><td>Boundary Wall &amp; Campus Security</td><td><span class="score-val">1.98</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.2.4</td><td>Fire Safety Equipment</td><td><span class="score-val">1.98</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>1.2.5</td><td>Emergency Preparedness &amp; Drills</td><td><span class="score-val">1.45</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>1.2.6</td><td>Child Protection Systems (POCSO)</td><td><span class="score-val">1.76</span></td><td></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="framework-domain">
+      <div class="domain-header d2" onclick="toggleDomain(this)"><span class="domain-tag d2">D2</span><span class="domain-label domain-d2">Administration &mdash; HR &amp; Leadership</span><div class="domain-meta"><span>11 params</span><span>15% weight</span><span>Avg: 2.16/3</span></div><span class="toggle-icon">&#9660;</span></div>
+      <div class="collapse-content">
+        <table class="subdomain-table">
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 1: Staffing Adequacy</td></tr>
+          <tr class="subdomain-row"><td>2.1.1</td><td>Teacher Availability (PTR Compliance)</td><td><span class="score-val">2.05</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>2.1.4</td><td>Subject-wise Qualified Teachers (UPS/Sec only)</td><td><span class="score-val">2.50</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>2.1.5</td><td>Non-Teaching Staff Availability</td><td><span class="score-val">1.64</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>2.1.6</td><td>Counsellor / Wellbeing Staff (UPS/Sec only)</td><td><span class="score-val">1.36</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>2.1.7</td><td>Teacher Attendance &amp; Continuity</td><td><span class="score-val">2.74</span></td><td><span class="grade utkarsh">High</span></td></tr>
+          <tr class="subdomain-row"><td>2.1.8</td><td>Non-Teaching Staff Attendance &amp; Continuity</td><td><span class="score-val">2.21</span></td><td></td></tr>
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 2: School Leadership Quality</td></tr>
+          <tr class="subdomain-row"><td>2.2.1</td><td>Principal Academic Engagement</td><td><span class="score-val">2.71</span></td><td><span class="grade utkarsh">High</span></td></tr>
+          <tr class="subdomain-row"><td>2.2.2</td><td>Teacher Professional Development</td><td><span class="score-val">1.93</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>2.2.3</td><td>Monitoring &amp; Feedback Mechanisms</td><td><span class="score-val">2.48</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>2.2.4</td><td>POSH (Prevention of Sexual Harassment)</td><td><span class="score-val">1.62</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>2.2.5</td><td>Teacher Recognition &amp; Appreciation</td><td><span class="score-val">2.21</span></td><td></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="framework-domain">
+      <div class="domain-header d3" onclick="toggleDomain(this)"><span class="domain-tag d3">D3</span><span class="domain-label domain-d3">Teaching &amp; Learning Pedagogy</span><div class="domain-meta"><span>26&ndash;27 params</span><span>20% weight</span><span>Avg: 2.04/3</span></div><span class="toggle-icon">&#9660;</span></div>
+      <div class="collapse-content">
+        <table class="subdomain-table">
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 1: Curriculum &amp; Instruction</td></tr>
+          <tr class="subdomain-row"><td>3.1.1</td><td>Curriculum Alignment &amp; Coverage</td><td><span class="score-val">2.57</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.1.2</td><td>Lesson Planning Quality</td><td><span class="score-val">2.57</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.1.3</td><td>Activity Based Learning</td><td><span class="score-val">2.55</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.1.4</td><td>ICT / Smart Class Integration</td><td><span class="score-val">2.02</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.1.5</td><td>Pre-Vocational Skills (UPS only)</td><td><span class="score-val">2.00</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.1.6</td><td>Vocational Skills (Secondary only)</td><td><span class="score-val">2.27</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.1.7</td><td>Mother Tongue &amp; Local Context (Primary only)</td><td><span class="score-val">2.59</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.1.8</td><td>Gender Equality &amp; Constitutional Values</td><td><span class="score-val">2.50</span></td><td></td></tr>
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 2: Classroom Teaching Processes</td></tr>
+          <tr class="subdomain-row"><td>3.2.1</td><td>Student Engagement in Lessons</td><td><span class="score-val">2.38</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.2</td><td>Classroom Management</td><td><span class="score-val">2.83</span></td><td><span class="grade utkarsh">High</span></td></tr>
+          <tr class="subdomain-row"><td>3.2.3</td><td>Student Attendance Rate</td><td><span class="score-val">2.19</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.4</td><td>Questioning Techniques</td><td><span class="score-val">2.40</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.5</td><td>Differentiated Instruction</td><td><span class="score-val">2.24</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.6</td><td>Inclusive Teaching Practices</td><td><span class="score-val">2.43</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.7</td><td>Check for Understanding (CFU)</td><td><span class="score-val">2.31</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.8</td><td>Use of TLM</td><td><span class="score-val">2.67</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.9</td><td>Quality of Teacher Feedback</td><td><span class="score-val">2.48</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.10</td><td>Creativity (Art, Projects, Performances)</td><td><span class="score-val">2.52</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.11</td><td>Effective Use of Teaching Time</td><td><span class="score-val">2.74</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.2.12</td><td>Self-Reflection &amp; Self-Assessment</td><td><span class="score-val">2.31</span></td><td></td></tr>
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 3: Co-curricular Activities</td></tr>
+          <tr class="subdomain-row"><td>3.3.1</td><td>Sports, Dance, Music, Art Participation</td><td><span class="score-val">2.40</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.3.2</td><td>Field Trips &amp; Exposure Visits</td><td><span class="score-val">1.81</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>3.3.3</td><td>Sporting Competitions (Intra/Inter school)</td><td><span class="score-val">2.14</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.3.4</td><td>Cultural / Academic Competitions</td><td><span class="score-val">2.12</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.3.5</td><td>Gender Parity in Co-curriculars</td><td><span class="score-val">2.50</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.3.6</td><td>CWSN Participation in Co-curriculars</td><td><span class="score-val">2.07</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.3.7</td><td>Student-Led Activities</td><td><span class="score-val">2.38</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.3.8</td><td>Annual Events</td><td><span class="score-val">2.62</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>3.3.9</td><td>Festival Celebrations</td><td><span class="score-val">2.69</span></td><td></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="framework-domain">
+      <div class="domain-header d4" onclick="toggleDomain(this)"><span class="domain-tag d4">D4</span><span class="domain-label domain-d4">Assessment &mdash; Learning Outcomes</span><div class="domain-meta"><span>11&ndash;14 params</span><span>40% weight</span><span>Avg: 2.19/3</span></div><span class="toggle-icon">&#9660;</span></div>
+      <div class="collapse-content">
+        <table class="subdomain-table">
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 1: Classroom Assessment Processes</td></tr>
+          <tr class="subdomain-row"><td>4.1.1</td><td>Regularity of Assessments</td><td><span class="score-val">2.33</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.1.2</td><td>Timeliness of Feedback</td><td><span class="score-val">2.48</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.1.3</td><td>Assessment Data Analysis</td><td><span class="score-val">2.29</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.1.4</td><td>Targeted Remedial Support</td><td><span class="score-val">2.31</span></td><td></td></tr>
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 2: Academic Outcomes</td></tr>
+          <tr class="subdomain-row"><td>4.2.1</td><td>Summative Assessment Results</td><td><span class="score-val">1.86</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.2.2</td><td>FLN Reading Proficiency (Primary only)</td><td><span class="score-val">2.36</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.2.3</td><td>FLN Numeracy Proficiency (Primary only)</td><td><span class="score-val">2.15</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.2.4</td><td>Board Exam Results (Grades 10 &amp; 12)</td><td><span class="score-val">1.85</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.2.5</td><td>Competitive Exams, Primary (VidyaGyan, JNV, etc.)</td><td><span class="score-val">1.90</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.2.6</td><td>Competitive Exams, UPS (Olympiads, NTSE, KVPY)</td><td><span class="score-val">1.82</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>4.2.7</td><td>Competitive Exams, Secondary (NEET, JEE, CUET)</td><td><span class="score-val">1.89</span></td><td></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="framework-domain">
+      <div class="domain-header d5" onclick="toggleDomain(this)"><span class="domain-tag d5">D5</span><span class="domain-label domain-d5">Inclusiveness &mdash; Wellbeing &amp; Community</span><div class="domain-meta"><span>7&ndash;8 params</span><span>10% weight</span><span>Avg: 2.26/3</span></div><span class="toggle-icon">&#9660;</span></div>
+      <div class="collapse-content">
+        <table class="subdomain-table">
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 1: Mental &amp; Physical Wellbeing</td></tr>
+          <tr class="subdomain-row"><td>5.1.1</td><td>SEL Implementation</td><td><span class="score-val">1.71</span></td><td><span class="grade uday">Low</span></td></tr>
+          <tr class="subdomain-row"><td>5.1.2</td><td>Health Checkups &amp; Medical Support</td><td><span class="score-val">2.14</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>5.1.3</td><td>Menstrual Hygiene Support (UPS/Sec only)</td><td><span class="score-val">2.29</span></td><td></td></tr>
+          <tr style="background:var(--gray-50)"><td colspan="4" style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-600)">Sub-Domain 2: Parent &amp; Community Engagement</td></tr>
+          <tr class="subdomain-row"><td>5.2.1</td><td>PTM Regularity &amp; Quality</td><td><span class="score-val">2.76</span></td><td><span class="grade utkarsh">High</span></td></tr>
+          <tr class="subdomain-row"><td>5.2.2</td><td>SMC Functionality</td><td><span class="score-val">2.69</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>5.2.3</td><td>Grievance Redressal Mechanism</td><td><span class="score-val">2.12</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>5.2.4</td><td>Community Cooperation under CSR</td><td><span class="score-val">2.00</span></td><td></td></tr>
+          <tr class="subdomain-row"><td>5.2.5</td><td>Community Involvement in Enrollment &amp; Retention</td><td><span class="score-val">2.36</span></td><td></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PARAMETER ANALYSIS -->
+<div id="tab-analysis" class="tab-pane">
+  <div class="section-label">Deep Dive</div>
+  <div class="section-title">Parameter Analysis</div>
+  <div class="section-desc">Parameter-level scoring across 42 schools. Ranked weakest to strongest (score out of 3).</div>
+  <div class="grid-40-60">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Bottom 15 Parameters (Priority Areas)</div>
+      <table class="data-table"><thead><tr><th>#</th><th>Parameter</th><th>Domain</th><th>Score</th></tr></thead><tbody id="bottom15Table"></tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Score Distribution &mdash; Bottom 15</div>
+      <div class="chart-wrap tall"><canvas id="bottom15Chart"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Top 10 Performing Parameters</div>
+      <table class="data-table"><thead><tr><th>#</th><th>Parameter</th><th>Domain</th><th>Score</th></tr></thead><tbody id="top10Table"></tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Full Parameter Ranking (All 86)</div>
+      <div style="margin-bottom:12px">
+        <select id="domainFilter" onchange="filterTable()" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:4px;font-size:12px;font-family:inherit;color:var(--gray-800)">
+          <option value="all">All Domains</option>
+          <option value="D1">D1: Infrastructure &amp; Safety</option>
+          <option value="D2">D2: HR &amp; Leadership</option>
+          <option value="D3">D3: Teaching &amp; Learning</option>
+          <option value="D4">D4: Assessment &amp; Outcomes</option>
+          <option value="D5">D5: Wellbeing &amp; Community</option>
+        </select>
+      </div>
+      <div style="max-height:400px;overflow-y:auto">
+        <table class="data-table"><thead style="position:sticky;top:0;z-index:1"><tr><th>#</th><th>Parameter</th><th>Domain</th><th>Score</th></tr></thead><tbody id="fullRankBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EVIDENCE ANALYSIS -->
+<div id="tab-evidence" class="tab-pane">
+  <div class="section-label">Evidence Quality</div>
+  <div class="section-title">Evidence Analysis</div>
+  <div class="section-desc">Evidence quality gaps observed in pilot submissions, and parameters ranked by evidence availability.</div>
+  <div class="note"><strong>Key finding:</strong> Most schools submitted some evidence, but quality was inconsistent. A large share showed existence-based proof rather than usage or systems-based evidence. Competitive exam, FLN, and POSH parameters had the lowest evidence submission rates.</div>
+  <div class="section-label" style="margin-bottom:12px">Six Evidence Gap Patterns</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;margin-bottom:28px">
+    <div class="gap-card"><span class="gap-num">01</span><div class="gap-title">Single Instance Evidence</div><div class="gap-row"><strong>Observed:</strong> One sample used to represent entire school</div><div class="gap-row"><strong>Example:</strong> One classroom photo for lighting</div><div class="gap-row"><strong>Why it fails:</strong> Does not show school-wide compliance</div><div class="gap-good">What's needed: Photos of 4&ndash;5 classrooms + summary note</div></div>
+    <div class="gap-card"><span class="gap-num">02</span><div class="gap-title">Existence vs. Usage</div><div class="gap-row"><strong>Observed:</strong> Infrastructure shown, no functional proof</div><div class="gap-row"><strong>Example:</strong> Library shelf photo submitted</div><div class="gap-row"><strong>Why it fails:</strong> No proof of active use</div><div class="gap-good">What's needed: Issue register + timetable + usage logs</div></div>
+    <div class="gap-card"><span class="gap-num">03</span><div class="gap-title">Event-Based Proof</div><div class="gap-row"><strong>Observed:</strong> One-time activity shown as routine</div><div class="gap-row"><strong>Example:</strong> Single PTM photo submitted</div><div class="gap-row"><strong>Why it fails:</strong> Doesn't show frequency or regularity</div><div class="gap-good">What's needed: PTM calendar + attendance from 2&ndash;3 PTMs</div></div>
+    <div class="gap-card"><span class="gap-num">04</span><div class="gap-title">Infrastructure Without Functionality</div><div class="gap-row"><strong>Observed:</strong> Asset present, operational status unknown</div><div class="gap-row"><strong>Example:</strong> Computer lab photo submitted</div><div class="gap-row"><strong>Why it fails:</strong> Equipment could be non-functional</div><div class="gap-good">What's needed: Timetable + maintenance log + student usage data</div></div>
+    <div class="gap-card"><span class="gap-num">05</span><div class="gap-title">Fragmented Documentation</div><div class="gap-row"><strong>Observed:</strong> Register page without continuity</div><div class="gap-row"><strong>Example:</strong> Single page image from register</div><div class="gap-row"><strong>Why it fails:</strong> No proof of regular maintenance</div><div class="gap-good">What's needed: Cover page + dated entries across multiple weeks</div></div>
+    <div class="gap-card"><span class="gap-num">06</span><div class="gap-title">Display Compliance</div><div class="gap-row"><strong>Observed:</strong> Posters shown as systems compliance</div><div class="gap-row"><strong>Example:</strong> POCSO poster photo submitted</div><div class="gap-row"><strong>Why it fails:</strong> No committee or system evidence</div><div class="gap-good">What's needed: Committee order + meeting minutes + training records</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Parameters by Evidence Availability (Ranked: Lowest to Highest Coverage)</div>
+    <div class="table-scroll">
+      <table class="data-table"><thead><tr><th>Rank</th><th>Parameter</th><th>Domain</th><th>With Evidence</th><th>Without Evidence</th><th>Coverage</th></tr></thead><tbody id="evidenceTable"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK ANALYSIS -->
+<div id="tab-feedback" class="tab-pane">
+  <div class="section-label">School Feedback</div>
+  <div class="section-title">Feedback Analysis</div>
+  <div class="section-desc">Responses from 34 schools on difficulty, evidence collection, time adequacy, and open-ended suggestions.</div>
+  <div class="grid-3" style="margin-bottom:24px">
+    <div class="card"><div class="card-title"><span class="dot"></span>Level Differentiation Difficulty</div><div class="chart-wrap short"><canvas id="feedbackChart1"></canvas></div></div>
+    <div class="card"><div class="card-title"><span class="dot"></span>Evidence Collection Difficulty</div><div class="chart-wrap short"><canvas id="feedbackChart2"></canvas></div></div>
+    <div class="card"><div class="card-title"><span class="dot"></span>Time Adequacy</div><div class="chart-wrap short"><canvas id="feedbackChart3"></canvas></div></div>
+  </div>
+  <div class="card mb-20">
+    <div class="card-title"><span class="dot"></span>Open-Ended Question Response Rates</div>
+    <table class="data-table"><thead><tr><th>Question</th><th>Responses</th><th>Response Rate</th><th>No/Blank</th></tr></thead>
+    <tbody>
+      <tr><td>Q3: Hardest Evidence Type to Collect</td><td>27</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:79%"></div></div><span class="score-val">79%</span></div></td><td>7</td></tr>
+      <tr><td>Q5: Additional Parameters Needed</td><td>31</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:91%"></div></div><span class="score-val">91%</span></div></td><td>3</td></tr>
+      <tr><td>Q6: Irrelevant Parameters</td><td>32</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:94%"></div></div><span class="score-val">94%</span></div></td><td>2</td></tr>
+      <tr><td>Q7: Other Challenges</td><td>30</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:88%"></div></div><span class="score-val">88%</span></div></td><td>4</td></tr>
+      <tr><td>Q8: Suggestions for Improvement</td><td>30</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill high" style="width:88%"></div></div><span class="score-val">88%</span></div></td><td>4</td></tr>
+    </tbody></table>
+  </div>
+  <div class="section-label" style="margin-bottom:12px">Thematic Analysis of Open-Ended Responses</div>
+  <div class="theme-grid">
+    <div class="theme-card high"><div class="theme-title">Photo Upload Problems<span class="mention-badge">~8 mentions</span></div><p>Server failures, file size limits (max 5 photos), compression issues. Most common technical complaint across all responses. Came up in Q3, Q7, Q8.</p></div>
+    <div class="theme-card high"><div class="theme-title">Missing "NA" Option<span class="mention-badge">~7 mentions</span></div><p>Primary schools have no guard, counsellor, science lab. Single-gender schools can't answer gender parity questions. No way to mark "Not Applicable" for many parameters. Q6, Q7, Q8.</p></div>
+    <div class="theme-card medium"><div class="theme-title">Parameters Irrelevant for Primary Schools<span class="mention-badge">~6 mentions</span></div><p>Guard, counsellor, non-teaching staff, science lab, ICT lab, competitive exams. These structures don't exist in parishadiya primary schools. Q6.</p></div>
+    <div class="theme-card medium"><div class="theme-title">Network Issues in Rural Areas<span class="mention-badge">~5 mentions</span></div><p>Forms timing out and going back mid-fill due to poor connectivity. Especially in villages. One school suggested offline-first, then online. Q7.</p></div>
+    <div class="theme-card medium"><div class="theme-title">FLN and Assessment Evidence Hard to Produce<span class="mention-badge">~4 mentions</span></div><p>FLN reading/numeracy results, competitive exam data, pedagogy evidence, and behavioural records were hardest to locate and upload. Q3.</p></div>
+    <div class="theme-card medium"><div class="theme-title">Want Pre-Training or Offline Preview<span class="mention-badge">~4 mentions</span></div><p>Schools wanted a training session before filling. One suggested giving the form as a PDF first so evidence can be collected before the online window opens. Q5, Q8.</p></div>
+    <div class="theme-card low"><div class="theme-title">Options Were "Clubbed" (Combined)<span class="mention-badge">~3 mentions</span></div><p>Multiple conditions packed into single options made it hard to select the right level. Schools wanted more granular choices, or 5 options instead of 3. Q3, Q7, Q8.</p></div>
+    <div class="theme-card low"><div class="theme-title">UDISE+ Data Hard to Extract<span class="mention-badge">~3 mentions</span></div><p>Schools struggled to pull DCF from UDISE+. Evidence format was unclear. Some didn't know how to generate the required reports. Q3, Q7.</p></div>
+    <div class="theme-card low"><div class="theme-title">Time Pressure During Board Exam Season<span class="mention-badge">~3 mentions</span></div><p>50% said time was "just manageable." The pilot ran during board exam prep. Schools were also exam centres. Better timing would improve quality. Q4, Q7.</p></div>
+    <div class="theme-card low"><div class="theme-title">Want Remarks/Comment Box Per Domain<span class="mention-badge">~2 mentions</span></div><p>Schools wanted space to explain context. Current form only allows selecting options, with no room for nuance or explanation. Q5, Q8.</p></div>
+    <div class="theme-card positive"><div class="theme-title">Positive Sentiment<span class="mention-badge">~4 mentions</span></div><p>Multiple schools called SQAAF valuable. One principal wrote it re-energised focus on forgotten aspects. Another thanked for the self-assessment opportunity. Q7, Q8.</p></div>
+  </div>
+</div>
+
+</div>
+<script>
+function switchTab(el,name){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+}
+function toggleDomain(h){
+  h.classList.toggle('open');
+  h.nextElementSibling.classList.toggle('open');
+}
+const paramData=[
+  {rank:1,name:"Entry/Exit Monitoring",domain:"D1",score:1.10},
+  {rank:2,name:"Counsellor/Wellbeing Staff",domain:"D2",score:1.36},
+  {rank:3,name:"Common Area/Gathering",domain:"D1",score:1.38},
+  {rank:4,name:"Computer/ICT Lab",domain:"D1",score:1.38},
+  {rank:5,name:"CCTV Coverage",domain:"D1",score:1.40},
+  {rank:6,name:"Emergency Drills",domain:"D1",score:1.45},
+  {rank:7,name:"POSH",domain:"D2",score:1.62},
+  {rank:8,name:"Non-Teaching Staff Availability",domain:"D2",score:1.64},
+  {rank:9,name:"SEL Implementation",domain:"D5",score:1.71},
+  {rank:10,name:"Child Protection (POCSO)",domain:"D1",score:1.76},
+  {rank:11,name:"Field Trips",domain:"D3",score:1.81},
+  {rank:12,name:"Competitive Exams (UPS)",domain:"D4",score:1.82},
+  {rank:13,name:"Drinking Water",domain:"D1",score:1.83},
+  {rank:14,name:"Board Exam Results",domain:"D4",score:1.85},
+  {rank:15,name:"Summative Results",domain:"D4",score:1.86},
+  {rank:16,name:"Sports Infrastructure",domain:"D1",score:1.88},
+  {rank:17,name:"Competitive Exams (Sec)",domain:"D4",score:1.89},
+  {rank:18,name:"Competitive Exams (Primary)",domain:"D4",score:1.90},
+  {rank:19,name:"Teacher Development",domain:"D2",score:1.93},
+  {rank:20,name:"Principal's Room/Staff Room",domain:"D1",score:1.95},
+  {rank:21,name:"Medical Room & First Aid",domain:"D1",score:1.98},
+  {rank:22,name:"Boundary Wall",domain:"D1",score:1.98},
+  {rank:23,name:"Fire Safety",domain:"D1",score:1.98},
+  {rank:24,name:"Pre-vocational Skills",domain:"D3",score:2.00},
+  {rank:25,name:"Community CSR",domain:"D5",score:2.00},
+  {rank:26,name:"ICT Integration",domain:"D3",score:2.02},
+  {rank:27,name:"Teacher Availability (PTR)",domain:"D2",score:2.05},
+  {rank:28,name:"CWSN Co-curricular",domain:"D3",score:2.07},
+  {rank:29,name:"Science Lab",domain:"D1",score:2.07},
+  {rank:30,name:"Other Competitions",domain:"D3",score:2.12},
+  {rank:31,name:"Grievance Redressal",domain:"D5",score:2.12},
+  {rank:32,name:"Toilet Cleanliness",domain:"D1",score:2.14},
+  {rank:33,name:"Smart Class Equipment",domain:"D1",score:2.14},
+  {rank:34,name:"Sporting Competitions",domain:"D3",score:2.14},
+  {rank:35,name:"Health Checkups",domain:"D5",score:2.14},
+  {rank:36,name:"FLN Numeracy",domain:"D4",score:2.15},
+  {rank:37,name:"Classroom Space & Seating",domain:"D1",score:2.17},
+  {rank:38,name:"Waste Management",domain:"D1",score:2.17},
+  {rank:39,name:"Library",domain:"D1",score:2.19},
+  {rank:40,name:"CWSN Accessibility",domain:"D1",score:2.19},
+  {rank:41,name:"Student Attendance",domain:"D3",score:2.19},
+  {rank:42,name:"Non-Teaching Attendance",domain:"D2",score:2.21},
+  {rank:43,name:"Teacher Recognition",domain:"D2",score:2.21},
+  {rank:44,name:"Differentiated Instruction",domain:"D3",score:2.24},
+  {rank:45,name:"Kitchen Garden",domain:"D1",score:2.26},
+  {rank:46,name:"Vocational Skills",domain:"D3",score:2.27},
+  {rank:47,name:"Kitchen/Canteen",domain:"D1",score:2.29},
+  {rank:48,name:"Assessment Data Analysis",domain:"D4",score:2.29},
+  {rank:49,name:"Menstrual Hygiene",domain:"D5",score:2.29},
+  {rank:50,name:"CFU (Check for Understanding)",domain:"D3",score:2.31},
+  {rank:51,name:"Self-Reflection",domain:"D3",score:2.31},
+  {rank:52,name:"Remedial Support",domain:"D4",score:2.31},
+  {rank:53,name:"Assessment Regularity",domain:"D4",score:2.33},
+  {rank:54,name:"Classroom Lighting",domain:"D1",score:2.36},
+  {rank:55,name:"Community Enrollment Support",domain:"D5",score:2.36},
+  {rank:56,name:"FLN Reading",domain:"D4",score:2.36},
+  {rank:57,name:"Handwash Facility",domain:"D1",score:2.38},
+  {rank:58,name:"Student Engagement",domain:"D3",score:2.38},
+  {rank:59,name:"Student-Led Activities",domain:"D3",score:2.38},
+  {rank:60,name:"Classroom Ventilation",domain:"D1",score:2.40},
+  {rank:61,name:"Questioning Techniques",domain:"D3",score:2.40},
+  {rank:62,name:"Sports/Dance/Music/Art",domain:"D3",score:2.40},
+  {rank:63,name:"Child Helpline Display",domain:"D1",score:2.43},
+  {rank:64,name:"Inclusive Teaching",domain:"D3",score:2.43},
+  {rank:65,name:"Monitoring & Feedback",domain:"D2",score:2.48},
+  {rank:66,name:"Teacher Feedback Quality",domain:"D3",score:2.48},
+  {rank:67,name:"Feedback Timeliness",domain:"D4",score:2.48},
+  {rank:68,name:"Subject-wise Teachers",domain:"D2",score:2.50},
+  {rank:69,name:"Gender Equality",domain:"D3",score:2.50},
+  {rank:70,name:"Gender Parity Co-curricular",domain:"D3",score:2.50},
+  {rank:71,name:"Creativity",domain:"D3",score:2.52},
+  {rank:72,name:"Activity Based Learning",domain:"D3",score:2.55},
+  {rank:73,name:"Curriculum Coverage",domain:"D3",score:2.57},
+  {rank:74,name:"Lesson Planning",domain:"D3",score:2.57},
+  {rank:75,name:"Mother Tongue Usage",domain:"D3",score:2.59},
+  {rank:76,name:"Annual Events",domain:"D3",score:2.62},
+  {rank:77,name:"TLM Usage",domain:"D3",score:2.67},
+  {rank:78,name:"Classroom Availability",domain:"D1",score:2.69},
+  {rank:79,name:"Festival Celebrations",domain:"D3",score:2.69},
+  {rank:80,name:"SMC Functionality",domain:"D5",score:2.69},
+  {rank:81,name:"Principal Engagement",domain:"D2",score:2.71},
+  {rank:82,name:"Teacher Attendance",domain:"D2",score:2.74},
+  {rank:83,name:"Teaching Time Usage",domain:"D3",score:2.74},
+  {rank:84,name:"PTM Quality",domain:"D5",score:2.76},
+  {rank:85,name:"Classroom Management",domain:"D3",score:2.83},
+  {rank:86,name:"Electricity Connection",domain:"D1",score:2.86},
+];
+const evidenceData=[
+  {rank:1,name:"Competitive Exams (NEET/JEE/CUET)",domain:"D4",w:0,wo:42},
+  {rank:2,name:"Board Exam Results (Grades 10 & 12)",domain:"D4",w:1,wo:41},
+  {rank:3,name:"Competitive Exams (VidyaGyan/JNV)",domain:"D4",w:1,wo:41},
+  {rank:4,name:"Vocational Skills (Secondary)",domain:"D3",w:2,wo:40},
+  {rank:5,name:"Pre-vocational Skills (UPS)",domain:"D3",w:3,wo:39},
+  {rank:6,name:"Competitive Exams (Olympiad/NTSE)",domain:"D4",w:3,wo:39},
+  {rank:7,name:"Community CSR Cooperation",domain:"D5",w:4,wo:38},
+  {rank:8,name:"Counsellor/Wellbeing Staff",domain:"D2",w:5,wo:37},
+  {rank:9,name:"FLN Numeracy Proficiency",domain:"D4",w:5,wo:37},
+  {rank:10,name:"SEL Implementation",domain:"D5",w:5,wo:37},
+  {rank:11,name:"FLN Reading Proficiency",domain:"D4",w:6,wo:36},
+  {rank:12,name:"POSH",domain:"D2",w:8,wo:34},
+  {rank:13,name:"Menstrual Hygiene Support",domain:"D5",w:8,wo:34},
+  {rank:14,name:"Entry/Exit Monitoring",domain:"D1",w:9,wo:33},
+  {rank:15,name:"Emergency Preparedness & Drills",domain:"D1",w:9,wo:33},
+  {rank:16,name:"CWSN Co-curricular Participation",domain:"D3",w:9,wo:33},
+  {rank:17,name:"Health Checkups & Medical Support",domain:"D5",w:9,wo:33},
+  {rank:18,name:"Assessment Data Analysis",domain:"D4",w:10,wo:32},
+  {rank:19,name:"Targeted Remedial Support",domain:"D4",w:10,wo:32},
+  {rank:20,name:"Mother Tongue Usage",domain:"D3",w:11,wo:31},
+];
+function sc(s){return s<1.6?'low':s<2.2?'mid':'high';}
+function dtag(d){return`<span class="domain-tag ${d.toLowerCase()}">${d}</span>`;}
+function buildBottom15(){
+  document.getElementById('bottom15Table').innerHTML=paramData.slice(0,15).map((p,i)=>`<tr><td><span class="rank">${i+1}</span></td><td>${p.name}</td><td>${dtag(p.domain)}</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill ${sc(p.score)}" style="width:${(p.score/3)*100}%"></div></div><span class="score-val">${p.score.toFixed(2)}</span></div></td></tr>`).join('');
+}
+function buildTop10(){
+  document.getElementById('top10Table').innerHTML=paramData.slice(-10).reverse().map((p,i)=>`<tr><td><span class="rank">${i+1}</span></td><td>${p.name}</td><td>${dtag(p.domain)}</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill ${sc(p.score)}" style="width:${(p.score/3)*100}%"></div></div><span class="score-val">${p.score.toFixed(2)}</span></div></td></tr>`).join('');
+}
+function buildFullRank(filter='all'){
+  const data=filter==='all'?paramData:paramData.filter(p=>p.domain===filter);
+  document.getElementById('fullRankBody').innerHTML=data.map(p=>`<tr><td><span class="rank">${p.rank}</span></td><td>${p.name}</td><td>${dtag(p.domain)}</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill ${sc(p.score)}" style="width:${(p.score/3)*100}%"></div></div><span class="score-val">${p.score.toFixed(2)}</span></div></td></tr>`).join('');
+}
+function filterTable(){buildFullRank(document.getElementById('domainFilter').value);}
+function buildEvidenceTable(){
+  document.getElementById('evidenceTable').innerHTML=evidenceData.map(e=>{
+    const pct=Math.round((e.w/42)*100);
+    return`<tr><td><span class="rank">${e.rank}</span></td><td>${e.name}</td><td>${dtag(e.domain)}</td><td class="text-mono" style="color:var(--green)">${e.w}</td><td class="text-mono" style="color:var(--red)">${e.wo}</td><td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill ${pct<30?'low':pct<60?'mid':'high'}" style="width:${pct}%"></div></div><span class="score-val">${pct}%</span></div></td></tr>`;
+  }).join('');
+}
+function initCharts(){
+  new Chart(document.getElementById('districtChart'),{type:'bar',data:{labels:['Lucknow','Barabanki','Unnao'],datasets:[{data:[77.09,74.02,71.33],backgroundColor:['#2A7A4B','#B45309','#B45309'],borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:60,max:85,grid:{color:'#EFF1F5'},ticks:{font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}});
+  new Chart(document.getElementById('domainRadar'),{type:'radar',data:{labels:['Infrastructure\n& Safety','HR &\nLeadership','Teaching &\nLearning','Assessment\n& Outcomes','Wellbeing &\nCommunity'],datasets:[{label:'Avg Score',data:[2.03,2.16,2.04,2.19,2.26],backgroundColor:'rgba(232,106,43,0.12)',borderColor:'#E86A2B',borderWidth:2,pointBackgroundColor:'#E86A2B',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:1,max:3,ticks:{stepSize:0.5,font:{size:10}},grid:{color:'#EFF1F5'},pointLabels:{font:{size:11}}}}}});
+  const b15=paramData.slice(0,15);
+  new Chart(document.getElementById('bottom15Chart'),{type:'bar',data:{labels:b15.map(p=>p.name),datasets:[{data:b15.map(p=>p.score),backgroundColor:b15.map(p=>p.score<1.6?'#EF4444':p.score<2.0?'#F59E0B':'#60A5FA'),borderRadius:3,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{min:0,max:3,grid:{color:'#EFF1F5'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  ['feedbackChart1','feedbackChart2','feedbackChart3'].forEach((id,i)=>{
+    const configs=[
+      {labels:['Easy','Neutral','Difficult'],data:[11.76,82.35,5.88]},
+      {labels:['Easy','Neutral','Very Difficult'],data:[8.82,85.29,5.88]},
+      {labels:['Very Reasonable','Just Manageable','Difficult'],data:[47.06,50.00,2.94]},
+    ];
+    new Chart(document.getElementById(id),{type:'doughnut',data:{labels:configs[i].labels,datasets:[{data:configs[i].data,backgroundColor:['#2A7A4B','#B45309','#B91C1C'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed.toFixed(1)}%`}}},cutout:'60%'}});
+  });
+}
+buildBottom15();buildTop10();buildFullRank();buildEvidenceTable();initCharts();
+</script>
+</body>
+</html>
